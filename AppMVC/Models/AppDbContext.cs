@@ -15,6 +15,8 @@ namespace AppMVC.Models
 
         public DbSet<Post> Posts { get; set; }
 
+        public DbSet<NotificationModel> Notifications { get; set; }
+
         public DbSet<PostCategory> PostCategories { get; set; }
         
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)

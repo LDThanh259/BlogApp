@@ -69,6 +69,9 @@
     <Folder Include="Areas\Files\Data\" />
     <Folder Include="Areas\Files\Models\" />
     <Folder Include="Areas\Files\Views\" />
+    <Folder Include="Areas\Notification\Data\" />
+    <Folder Include="Areas\Notification\Models\" />
+    <Folder Include="Areas\Notification\Views\" />
     <Folder Include="wwwroot\css\" />
     <Folder Include="wwwroot\images\" />
     <Folder Include="wwwroot\planet\" />

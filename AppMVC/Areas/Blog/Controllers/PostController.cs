@@ -133,7 +133,7 @@ namespace AppMVC.Areas.Blog.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Title,Description,Slug,Content,Published,CategoryIds")] CreatePostModel post)
+        public async Task<IActionResult> Create([Bind("Title,Description,Slug,Content,CategoryIds")] CreatePostModel post)
         {
             var categories = await _context.Categories.ToListAsync();
             ViewData["categories"] = new MultiSelectList(categories, "Id", "Title");
@@ -169,6 +169,13 @@ namespace AppMVC.Areas.Blog.Controllers
                 }
 
                 _context.Add(post);
+                await _context.SaveChangesAsync();
+
+                _context.Add(new NotificationModel
+                {
+                    PostId = post.PostId,
+                    Message = $"Yêu cầu phê duyệt bài post mới: {post.Title} của {user.UserName}"
+                });
                 await _context.SaveChangesAsync();
 
 

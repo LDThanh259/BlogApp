@@ -1,22 +1,83 @@
-﻿
-<li class="nav-item dropdown">
+﻿<li class="nav-item dropdown">
     <a class="nav-link position-relative dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo">
-        <!-- Biểu tượng chuông lớn hơn -->
         <i class="bi bi-bell-fill" style="font-size: 1.5rem;"></i>
 
-        <!-- Badge thông báo hình tròn nhỏ hơn -->
-        <span class="position-absolute top-30 start-70 translate-middle badge rounded-pill bg-danger" style="font-size: 0.7rem;">
-            3
+        <span class="position-absolute top-30 start-70 translate-middle badge rounded-pill bg-danger" id="notificationCount" style="font-size: 0.7rem;">
+            0
             <span class="visually-hidden">thông báo chưa đọc</span>
         </span>
     </a>
 
-    <!-- Dropdown content -->
-    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
-        <li><a class="dropdown-item" href="#">Thông báo 1</a></li>
-        <li><a class="dropdown-item" href="#">Thông báo 2</a></li>
-        <li><a class="dropdown-item" href="#">Thông báo 3</a></li>
-        <li><hr class="dropdown-divider"></li>
-        <li><a class="dropdown-item" href="#">Xem tất cả thông báo</a></li>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" id="notificationList">
+        <li><a class="dropdown-item" href="#">Không có thông báo mới.</a></li> <!-- Mặc định là không có thông báo -->
     </ul>
 </li>
+
+<script>
+    $(document).ready(function () {
+
+        function timeAgo(date) {
+            const now = new Date();
+            const seconds = Math.floor((now - new Date(date)) / 1000);
+
+            let interval = Math.floor(seconds / 31536000);
+            if (interval >= 1) return interval + " năm trước";
+
+            interval = Math.floor(seconds / 2592000);
+            if (interval >= 1) return interval + " tháng trước";
+
+            interval = Math.floor(seconds / 86400);
+            if (interval >= 1) return interval + " ngày trước";
+
+            interval = Math.floor(seconds / 3600);
+            if (interval >= 1) return interval + " giờ trước";
+
+            interval = Math.floor(seconds / 60);
+            if (interval >= 1) return interval + " phút trước";
+
+            return Math.floor(seconds) + " giây trước";
+        }
+
+        function fetchNotifications() {
+            $.ajax({
+                url: '@Url.Action("Index", "Notification")',
+                type: 'GET',
+                success: function (notifications) {
+                    var notificationList = $('#notificationList');
+                    var notificationCount = $('#notificationCount');
+
+                    notificationList.empty(); // Xóa danh sách hiện tại
+                    notificationCount.text(notifications.length); // Cập nhật số lượng thông báo
+
+                    if (notifications.length === 0) {
+                        notificationList.append('<li><a class="dropdown-item" href="#">Không có thông báo mới.</a></li>');
+                    } else {
+                        notifications.forEach(function (notification) {
+                            var timeAgoText = timeAgo(notification.post.dateCreated);
+                            notificationList.append(
+                                `<li>
+                                        <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
+                                          <div class="toast-header">
+                                                <strong class="me-auto">${notification.message}</strong>
+                                                    <small>${timeAgoText}</small>
+                                          </div>
+                                          </div>
+                                        </div>
+                                </li>`
+                            );
+                        });
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error("Lỗi khi lấy thông báo:", error);
+                }
+            });
+        }
+
+        // Gọi hàm fetchNotifications khi trang tải
+        fetchNotifications();
+
+        // Gọi hàm fetchNotifications mỗi 5 giây để tự động cập nhật thông báo mới
+        //setInterval(fetchNotifications, 5000);
+    });
+</script>
