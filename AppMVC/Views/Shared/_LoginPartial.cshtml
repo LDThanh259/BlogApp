@@ -1,0 +1,39 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using AppMVC.Models
+
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.9.1/font/bootstrap-icons.min.css" />
+
+@if (SignInManager.IsSignedIn(User))
+{
+    <form asp-area="Identity" asp-controller="Account" asp-action="LogOff" method="post" id="logoutForm" class="navbar-right">
+        <ul class="nav navbar-nav navbar-right">
+            
+            <partial name="_Notification"></partial>
+
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center" asp-area="Identity" asp-controller="Manage" asp-action="Index" title="@UserManager.GetUserName(User)">
+                    <img src="/contents/profile_icon.png?_t=1727418097" class="rounded-circle" style="width: 40px; height: 40px;" alt="@UserManager.GetUserName(User)" />
+                </a>
+            </li>
+
+            <li class="nav-item">
+                <button type="submit" class="btn btn-link navbar-btn navbar-link">Đăng xuất</button>
+            </li>
+        </ul>
+    </form>
+}
+else
+{
+    <ul class="nav navbar-nav navbar-right">
+        <li class="nav-item">
+            <a class="nav-link" asp-area="Identity" asp-controller="Account" asp-action="Register">Đăng ký</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" asp-area="Identity" asp-controller="Account" asp-action="Login">Đăng nhập</a>
+        </li>
+    </ul>
+}

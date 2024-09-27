@@ -1,0 +1,46 @@
+﻿@using static AppMVC.Views.Shared.Components.CategorySideBar.CategorySideBar
+@model AppMVC.Views.Shared.Components.CategorySideBar.CategorySideBar.CategorySideBarData
+
+@{
+    int level = Model.level;
+}
+
+@if (Model.categories.Count > 0)
+{
+    @if (level == 0)
+    {
+        @Html.Raw("<div class=\"categorysidebar\">")
+        ;
+        <h3>
+            <a asp-controller="ViewPost" asp-action="Index" asp-route-categoryslug="">
+                Categories
+            </a>
+        </h3>
+    }
+    <ul>
+        @foreach (var category in Model.categories)
+        {
+            var cssActive = (category.Slug == Model.categoryslug) ? "active" : null;
+
+            <li>
+                <a class="@cssActive" asp-controller="ViewPost" asp-action="Index" asp-route-categoryslug="@category.Slug">
+                    @category.Title
+                </a>
+                @if (category.CategoryChildren.Count > 0)
+                {
+                   @await Component.InvokeAsync("AppMVC.Views.Shared.Components.CategorySideBar.CategorySideBar", new CategorySideBarData()
+                   {
+                       categories = category.CategoryChildren.ToList(),
+                       level = level + 1,
+                       categoryslug = Model.categoryslug // Dùng Model thay vì ViewBag
+                   })
+                }
+            </li>
+        }
+    </ul>
+    @if (level == 0)
+    {
+        @Html.Raw("</div>")
+        ;
+    }
+}

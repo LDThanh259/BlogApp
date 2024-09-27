@@ -1,0 +1,72 @@
+﻿@model List<Post>
+@using static AppMVC.Views.Shared.Components.CategorySideBar.CategorySideBar
+
+@{
+    List<Category> categories = ViewBag.Categories as List<Category>;
+    Category category = ViewBag.category as Category;
+
+    ViewData["Title"] = (category != null) ? category.Title : "Categories";
+}
+
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="#">Home</a></li>
+        @if(category != null)
+        {
+            var list = category.ListParents();
+            foreach(var l in list)
+            {
+                <li class="breadcrumb-item active" >
+                    <a asp-action="Index" asp-route-categoryslug="@l.Slug">@l.Title</a>
+                </li>
+            }
+            <li class="breadcrumb-item active" aria-current="page">@category.Title</li>
+        }
+    </ol>
+</nav>
+
+<h1>@ViewData["Title"]</h1>
+@if (category != null)
+{
+    <p>@Html.Raw(category.Content)</p>
+}
+else
+{
+    <p>Categories....</p>
+}
+<hr />
+@foreach (var post in Model)
+{
+    <div class="media border-bottom mb-3 pb-3 d-flex">
+        <img class="mr-3 w-25 h-25" src="/contents/nophoto.jpg?_t=1727255775" alt="Generic placeholder image">
+        <div class="media-body ps-3">
+            <h5 class="mt-0">
+                <a asp-controller="ViewPost" asp-action="Details" asp-route-postslug="@post.Slug">
+                    @post.Title
+                </a>
+            </h5>
+            @Html.Raw(post.Description)
+            <div>
+                Category:
+                <strong class="text-danger">
+                    @post.PostCategories.FirstOrDefault()?.Category.Title
+                </strong>
+            </div>
+            <div class="author-row">
+                Author: <strong>@post.Author.UserName</strong> | 
+                Date update: <i>@post.DateUpdated</i>
+            </div>
+        </div>
+    </div>
+}
+
+@section Sidebar {
+    @await Component.InvokeAsync("AppMVC.Views.Shared.Components.CategorySideBar.CategorySideBar", new CategorySideBarData()
+    {
+        categories = categories,
+        level = 0,
+        categoryslug = ViewBag.categoryslug
+    })
+}
+
+<partial name="_PagingXTL" model="@ViewBag.pagingmodel" />

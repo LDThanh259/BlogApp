@@ -1,0 +1,62 @@
+﻿@model IEnumerable<AppMVC.Models.Blog.Category>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<p>
+    <a asp-action="Create" class="btn btn-primary btn-sm">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.Title)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.Slug)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model) {
+            Console.WriteLine($"Id: {item.Id}, Category: {item.Title}, ParentCategoryId: {item.ParentCategoryId}, Children count: {item.CategoryChildren?.Count()}");
+            await RenderCategory(item,0);
+        }
+    </tbody>
+</table>
+
+@{
+    async Task RenderCategory(Category item, int level)
+    {
+        string prefix = string.Concat(Enumerable.Repeat("&nbsp;&nbsp;", level));
+
+
+        <tr>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.Id">@Html.Raw(prefix) @Html.DisplayFor(modelItem => item.Title)</a>        
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.Slug)
+            </td>
+            <td>
+                <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+            </td>
+        </tr>
+
+        if(item.CategoryChildren?.Count() > 0)
+        {
+            foreach(var category in item.CategoryChildren)
+            {
+                Console.WriteLine($"Id: {category.Id}, Category: {category.Title},ParentCategoryId: {category.ParentCategoryId} ,Children count: {category.CategoryChildren?.Count()}");
+                await RenderCategory(category, level + 1);
+            }
+        }
+    }
+}
+
+
+
+

@@ -1,0 +1,43 @@
+﻿@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService authorizationService
+
+<div class="dropdown show">
+    <a class="btn btn-outline-danger dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Manage
+    </a>
+    @{
+        var admin = await authorizationService.AuthorizeAsync(this.User, "AdminPolicy");
+        var editor = await authorizationService.AuthorizeAsync(this.User, "EditorPolicy");
+
+        if (admin.Succeeded)
+        {
+            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink">
+                <a class="dropdown-item" asp-action="Index" asp-area="database" asp-controller="DbManage">Database</a>
+                <a class="dropdown-item" asp-action="Index" asp-area="Contact" asp-controller="Contact">Contact</a>
+                <a class="dropdown-item" asp-action="Index" asp-area="Identity" asp-controller="Role">Role Manager</a>
+                <a class="dropdown-item" asp-action="Index" asp-area="Identity" asp-controller="User">User Manager</a>
+                <a class="dropdown-item" asp-action="Index" asp-area="Blog" asp-controller="Category">Blog Manager</a>
+                <a class="dropdown-item" asp-action="Index" asp-area="Blog" asp-controller="Post">Post Manager</a>
+                <a target="_blank" class="dropdown-item" asp-action="Index" asp-area="Files" asp-controller="FileManager">Files Manager</a>
+
+            </div>
+        }
+        else if (editor.Succeeded)
+        {
+
+            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink">
+                <a class="dropdown-item" asp-action="Index" asp-area="Contact" asp-controller="Contact">Contact</a>
+                <a class="dropdown-item" asp-action="Index" asp-area="Blog" asp-controller="Category">Blog Manager</a>
+                <a class="dropdown-item" asp-action="Index" asp-area="Blog" asp-controller="Post">Post Manager</a>
+            </div>
+
+        }
+        else
+        {
+            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuLink">
+                <a class="dropdown-item" asp-action="Index" asp-area="Blog" asp-controller="Post">Post Manager</a>
+            </div>
+            
+        }
+    }
+</div>
