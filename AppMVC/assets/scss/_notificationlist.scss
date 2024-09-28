@@ -1,0 +1,28 @@
+﻿#notificationList {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 0;
+    border-radius: 10px;
+}
+
+#notificationList li {
+    border: none;
+}
+
+#notificationList li:hover {
+    cursor: pointer; 
+
+}
+
+.toast {
+    border-radius: 5px;
+}
+
+.toast-header {
+    background-color: #ffffff; /* Nền trắng */
+    border-bottom: none; /* Xóa đường viền giữa phần header và body */
+}
+
+div.toast-header:hover {
+    background-color: #DDDDDD;
+}

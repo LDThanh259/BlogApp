@@ -1,4 +1,5 @@
 ﻿using AppMVC.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,10 +14,12 @@ namespace AppMVC.Areas.Notification.Controllers
             _context = context;
         }
 
+        [Authorize(Policy = "AdminPolicy")]
         public IActionResult Index()
         {
             var notifications = _context.Notifications
-                .Include(n => n.Post).ToList();
+                .Include(n => n.Post)
+                .OrderByDescending(n => n.Post.DateCreated).ToList();
 
             return Json(notifications);
         }

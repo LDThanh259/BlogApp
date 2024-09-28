@@ -1,4 +1,6 @@
-﻿<li class="nav-item dropdown">
+﻿@using AppMVC.Data
+
+<li class="nav-item dropdown">
     <a class="nav-link position-relative dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Thông báo">
         <i class="bi bi-bell-fill" style="font-size: 1.5rem;"></i>
 
@@ -9,75 +11,116 @@
     </a>
 
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown" id="notificationList">
-        <li><a class="dropdown-item" href="#">Không có thông báo mới.</a></li> <!-- Mặc định là không có thông báo -->
+        <li><a class="dropdown-item" style="border: none;" href="#">Không có thông báo mới.</a></li> <!-- Mặc định là không có thông báo -->
     </ul>
 </li>
+@if(User.IsInRole(RoleName.Administrator))
+{
+    <script>
+        $(document).ready(function () {
 
-<script>
-    $(document).ready(function () {
+            // Hàm tính thời gian đã trôi qua
+            function timeAgo(date) {
+                const now = new Date();
+                const seconds = Math.floor((now - new Date(date)) / 1000);
 
-        function timeAgo(date) {
-            const now = new Date();
-            const seconds = Math.floor((now - new Date(date)) / 1000);
+                let interval = Math.floor(seconds / 31536000);
+                if (interval >= 1) return interval + " năm trước";
 
-            let interval = Math.floor(seconds / 31536000);
-            if (interval >= 1) return interval + " năm trước";
+                interval = Math.floor(seconds / 2592000);
+                if (interval >= 1) return interval + " tháng trước";
 
-            interval = Math.floor(seconds / 2592000);
-            if (interval >= 1) return interval + " tháng trước";
+                interval = Math.floor(seconds / 86400);
+                if (interval >= 1) return interval + " ngày trước";
 
-            interval = Math.floor(seconds / 86400);
-            if (interval >= 1) return interval + " ngày trước";
+                interval = Math.floor(seconds / 3600);
+                if (interval >= 1) return interval + " giờ trước";
 
-            interval = Math.floor(seconds / 3600);
-            if (interval >= 1) return interval + " giờ trước";
+                interval = Math.floor(seconds / 60);
+                if (interval >= 1) return interval + " phút trước";
 
-            interval = Math.floor(seconds / 60);
-            if (interval >= 1) return interval + " phút trước";
+                return Math.floor(seconds) + " giây trước";
+            }
 
-            return Math.floor(seconds) + " giây trước";
-        }
+            // Hàm lấy thông báo từ cơ sở dữ liệu
+            function fetchNotifications() {
+                $.ajax({
+                    url: '@Url.Action("Index", "Notification")',
+                    type: 'GET',
+                    success: function (notifications) {
+                        var notificationList = $('#notificationList');
+                        var notificationCount = $('#notificationCount');
 
-        function fetchNotifications() {
-            $.ajax({
-                url: '@Url.Action("Index", "Notification")',
-                type: 'GET',
-                success: function (notifications) {
+                        notificationList.empty(); // Xóa danh sách hiện tại
+                        notificationCount.text(notifications.length); // Cập nhật số lượng thông báo
+
+                        if (notifications.length === 0) {
+                            notificationList.append('<li><a class="dropdown-item" href="#">Không có thông báo mới.</a></li>');
+                        } else {
+                            notifications.forEach(function (notification) {
+                                var timeAgoText = timeAgo(notification.post.dateCreated);
+                                var postDetailsUrl = '@Url.Action("Details", "Post", new { area = "Blog", id = "__postId__" })'.replace("__postId__", notification.postId);
+
+                                notificationList.append(
+                                    `<li>
+                                    <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
+                                        <div class="toast-header">
+                                            <strong class="me-auto">
+                                                <a href="${postDetailsUrl}">${notification.message}</a>
+                                            </strong>
+                                            <small>${timeAgoText}</small>
+                                        </div>
+                                    </div>
+                                </li>`
+                                );
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Lỗi khi lấy thông báo:", error);
+                    }
+                });
+            }
+
+            // Gọi hàm fetchNotifications khi trang tải
+            fetchNotifications();
+
+            // Kết nối tới NotificationHub qua SignalR
+            var connection = new signalR.HubConnectionBuilder().withUrl("/notificationHub").build();
+
+            connection.on("ReceiveNotification", function (message,postId) {
+                if(message != null) {
                     var notificationList = $('#notificationList');
                     var notificationCount = $('#notificationCount');
 
-                    notificationList.empty(); // Xóa danh sách hiện tại
-                    notificationCount.text(notifications.length); // Cập nhật số lượng thông báo
+                    var postDetailsUrl = '@Url.Action("Details", "Post", new { area = "Blog", id = "__postId__" })'.replace("__postId__", postId);
 
-                    if (notifications.length === 0) {
-                        notificationList.append('<li><a class="dropdown-item" href="#">Không có thông báo mới.</a></li>');
-                    } else {
-                        notifications.forEach(function (notification) {
-                            var timeAgoText = timeAgo(notification.post.dateCreated);
-                            notificationList.append(
-                                `<li>
-                                        <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
-                                          <div class="toast-header">
-                                                <strong class="me-auto">${notification.message}</strong>
-                                                    <small>${timeAgoText}</small>
-                                          </div>
-                                          </div>
+                    // Thêm thông báo mới vào danh sách
+                    notificationList.prepend(
+                        `<li>
+                                    <div class="toast fade show" role="alert" aria-live="assertive" aria-atomic="true">
+                                        <div class="toast-header">
+                                                    <strong class="me-auto"> <a href="${postDetailsUrl}">${message}</a></strong>
+                                            <small>Vừa mới</small>
                                         </div>
+                                    </div>
                                 </li>`
-                            );
-                        });
-                    }
-                },
-                error: function (xhr, status, error) {
-                    console.error("Lỗi khi lấy thông báo:", error);
+                    );
+
+                    // Cập nhật số lượng thông báo
+                    notificationCount.text(parseInt(notificationCount.text()) + 1);
+
                 }
             });
-        }
 
-        // Gọi hàm fetchNotifications khi trang tải
-        fetchNotifications();
+            connection.start().catch(function (err) {
+                return console.error(err.toString());
+            });
 
-        // Gọi hàm fetchNotifications mỗi 5 giây để tự động cập nhật thông báo mới
-        //setInterval(fetchNotifications, 5000);
-    });
-</script>
+        });
+    </script>
+
+    <!-- Đảm bảo đã thêm thư viện SignalR -->
+    <script src="~/lib/microsoft-signalr/signalr.min.js"></script>
+}
+

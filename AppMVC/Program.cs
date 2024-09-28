@@ -1,4 +1,5 @@
 ﻿using AppMVC.Data;
+using AppMVC.Hub;
 using AppMVC.Models;
 using AppMVC.Requirement;
 using AppMVC.Services;
@@ -124,6 +125,7 @@ internal class Program
         builder.Services.AddScoped<IAuthorizationHandler, IsPostAuthorHandler>();
         builder.Services.AddScoped<IAuthorizationHandler, DeletePostAuthorizationHandler>();
 
+        builder.Services.AddSignalR();
 
         var app = builder.Build();
 
@@ -158,6 +160,9 @@ internal class Program
                 pattern: "{controller=Home}/{action=Index}/{id?}");
 
             endpoints.MapRazorPages();
+
+            endpoints.MapHub<NotificationHub>("/notificationHub"); // Định nghĩa endpoint cho Hub
+
         });
 
         app.Run();

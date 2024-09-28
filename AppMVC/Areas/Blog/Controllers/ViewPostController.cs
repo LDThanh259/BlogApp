@@ -41,6 +41,7 @@ namespace AppMVC.Areas.Blog.Controllers
             }
 
             var posts = _appDbContext.Posts
+                .Where(p => p.Published)
                 .Include(p => p.Author)
                 .Include(p => p.PostCategories)
                 .ThenInclude(p => p.Category)

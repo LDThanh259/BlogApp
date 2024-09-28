@@ -2,10 +2,11 @@
 
 @{
     ViewData["Title"] = "Index";
+
+    var username = User.Identity.Name;
 }
 
-<h1>Index</h1>
-
+@await Html.PartialAsync("_StatusMessage")
 <p>
     <a asp-action="Create">Create New</a>
 </p>
@@ -41,7 +42,7 @@
                     @ViewBag.postIndex
                 </td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.PostId">@Html.DisplayFor(modelItem => item.Title)</a>
+                    <a asp-action="Details" asp-route-id="@item.PostId">@Html.DisplayFor(modelItem => item.Title)</a>
                     <br />
 
                     <div class="h6">
@@ -51,7 +52,14 @@
 
                 </td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Published)
+                    @if (!item.Published)
+                    {
+                        <a asp-action="Details" asp-route-id="@item.PostId">Unapproved</a>
+                    }
+                    else
+                    {
+                        <span>Approved</span>
+                    }
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Author.UserName)
@@ -60,9 +68,13 @@
                     @Html.DisplayFor(modelItem => item.DateUpdated)
                 </td>
                 <td>
-                    <a asp-action="Details" asp-route-id="@item.PostId">Details</a> |
+                    @if (username == item.Author.UserName)
+                    {
+                        <a asp-action="Edit" asp-route-id="@item.PostId">Edit |</a>
+                    }
                     <a asp-action="Delete" asp-route-id="@item.PostId">Delete</a>
                 </td>
+
             </tr>
         }
     </tbody>

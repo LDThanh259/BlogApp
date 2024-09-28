@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using AppMVC.Areas.Blog.Models;
 using AppMVC.Areas.Identity.Models.UserViewModels;
 using AppMVC.Data;
+using AppMVC.Hub;
 using AppMVC.Models;
 using AppMVC.Models.Blog;
 using AppMVC.Utilities;
@@ -12,6 +13,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Shared;
 
@@ -28,14 +30,17 @@ namespace AppMVC.Areas.Blog.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly IAuthorizationService _authorizationService;
 
+        private readonly IHubContext<NotificationHub> _hubContext;
+
         [TempData]
         public string StatusMessage { get; set; }
 
-        public PostController(AppDbContext context, UserManager<AppUser> userManager, IAuthorizationService authorizationService)
+        public PostController(AppDbContext context, UserManager<AppUser> userManager, IAuthorizationService authorizationService, IHubContext<NotificationHub> hubContext)
         {
             _context = context;
             _userManager = userManager;
             _authorizationService = authorizationService;
+            _hubContext = hubContext;
         }
 
         // GET: Blog/Post
@@ -43,14 +48,16 @@ namespace AppMVC.Areas.Blog.Controllers
         {
             IOrderedQueryable<Post> posts = null;
 
-            posts = _context.Posts
-                .Include(p => p.Author)
-                .OrderByDescending(p => p.DateUpdated);
+            //posts = _context.Posts
+            //    .Where(p => p.Published)
+            //    .Include(p => p.Author)
+            //    .OrderByDescending(p => p.DateUpdated);
 
             var user = await _userManager.GetUserAsync(this.User);
             if (user != null)
             {
                 posts = _context.Posts
+                        .Where(p => p.Published)
                         .Where(p => p.Author == user)
                         .Include(p => p.Author)
                         .OrderByDescending(p => p.DateUpdated);
@@ -171,13 +178,18 @@ namespace AppMVC.Areas.Blog.Controllers
                 _context.Add(post);
                 await _context.SaveChangesAsync();
 
+                var notificationMessage = $"Yêu cầu phê duyệt bài post mới: {post.Title} của {user.UserName}";
+
                 _context.Add(new NotificationModel
                 {
                     PostId = post.PostId,
-                    Message = $"Yêu cầu phê duyệt bài post mới: {post.Title} của {user.UserName}"
+                    Message = notificationMessage
                 });
                 await _context.SaveChangesAsync();
 
+                // Gửi thông báo cho nhóm Admin qua SignalR
+                var hubContext = (IHubContext<NotificationHub>)HttpContext.RequestServices.GetService(typeof(IHubContext<NotificationHub>));
+                await hubContext.Clients.Group("AdminGroup").SendAsync("ReceiveNotification", notificationMessage, post.PostId);
 
                 return RedirectToAction(nameof(Index));
             }
@@ -231,7 +243,7 @@ namespace AppMVC.Areas.Blog.Controllers
         [HttpPost]
         //[Authorize(Policy = "AuthorPolicy")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("PostId,Title,Description,Slug,Content,Published,CategoryIds")] CreatePostModel post)
+        public async Task<IActionResult> Edit(int id, [Bind("PostId,Title,Description,Slug,Content,CategoryIds")] CreatePostModel post)
         {
             if (id != post.PostId)
             {
@@ -384,6 +396,52 @@ namespace AppMVC.Areas.Blog.Controllers
         private bool PostExists(int id)
         {
             return _context.Posts.Any(e => e.PostId == id);
+        }
+
+        [HttpGet]
+        [Authorize(Policy = "AdminPolicy")]
+        public async Task<IActionResult> ApproveNotification(int id)
+        {
+            var post = await _context.Posts.FindAsync(id);
+            if (post == null)
+            {
+                return NotFound();
+            }
+
+            post.Published = true;
+            post.DateUpdated = DateTime.Now;
+
+            var notifications = _context.Notifications.Where(n => n.PostId == id);
+            _context.Notifications.RemoveRange(notifications);
+
+            await _context.SaveChangesAsync();
+
+            TempData["StatusMessage"] = "Post approved successfully!";
+            return RedirectToAction("Index");
+        }
+
+        [HttpGet]
+        [Authorize(Policy = "AdminPolicy")]
+        public async Task<IActionResult> UnapproveNotification(int id)
+        {
+            var post = await _context.Posts.FindAsync(id);
+            if (post == null)
+            {
+                return NotFound();
+            }
+
+            if (!post.Published)
+            {
+                var notifications = _context.Notifications.Where(n => n.PostId == id);
+
+                _context.Notifications.RemoveRange(notifications);
+
+                _context.Posts.Remove(post);
+            }
+            await _context.SaveChangesAsync();
+
+            TempData["StatusMessage"] = "Post unapproved successfully!";
+            return RedirectToAction("Index");
         }
     }
 }
